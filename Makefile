@@ -36,3 +36,9 @@ setpermissions:
 runmain:
 	@echo "Running main..."
 	./main.sh
+
+
+.PHONY: runtests
+runtests:
+	@echo "Running tests..."
+	./test.sh

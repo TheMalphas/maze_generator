@@ -1,64 +1,73 @@
-from tkinter import Canvas
-from canvas import Point, Line, Window
+from tkinter import Tk, BOTH, Canvas
+from dataclasses import dataclass
 
-class Cell:
-    """Cell self-drawing class."""
 
-    def __init__(self, win: Window):
-        self.has_left_wall = True
-        self.has_right_wall = True
-        self.has_top_wall = True
-        self.has_bottom_wall = True
-        self._x1 = None
-        self._y1 = None
-        self._x2 = None
-        self._y2 = None
-        self._win: Window = win
+def CenterWindowToDisplay(Screen: Tk, width: int, height:int):
+    """Center the window to the main display/monitor."""
+
+    screen_width = Screen.winfo_screenwidth()
+    screen_height = Screen.winfo_screenheight()
+    x = int((screen_width/2) - width/2)
+    y = int((screen_height/2) - height/2)
+    return f"{width}x{height}+{x}+{y}"
+
+class Window:
+    """Window to draw."""
+
+    def __init__(self, width: int, height: int):
+        """Screen constructor."""
+
+        self.__root = Tk()
+        self.__root.geometry(CenterWindowToDisplay(self.__root, width, height))
+        self.__root.title = "Maze"
+        self.__root.protocol("WM_DELETE_WINDOW", self.close)
+
+        self.__canvas = Canvas(self.__root, bg="white")
+        self.__canvas.pack(fill=BOTH, expand=1)
+        self.__running = False
     
-    @property
-    def get_center_point(self):
-        if any([self._x1, self._x2, self._y1, self._y2]) == None:
-            raise 'Cell is missing coordinates.'
-        half_length = abs(self._x2 - self._x1) // 2
-        x_center = half_length + self._x1
-        y_center = half_length + self._y1
+    def redraw(self):
+        """Redraws the image."""
+        self.__root.update_idletasks()
+        self.__root.update()
+    
+    def wait_for_close(self):
+        """Set running to True and trigger redraw."""
+        self.__running = True
+        while self.__running: 
+            self.redraw()
+    
+    def draw_line(self, line: 'Line', fill_color: str = "black", fill_width: int = 2):
+        """Draw a line on the canvas."""
+        line.draw(self.__canvas, fill_color, fill_width)
 
-        return Point(x_center, y_center)
+    def close(self):
+        """Set running to False."""
+        self.__running = False
 
-    def draw(self, x1, y1, x2, y2):
-        """Draw method."""
-        if self._win is None:
-            return
-        self._x1 = x1
-        self._x2 = x2
-        self._y1 = y1
-        self._y2 = y2
-        top_left_corner = Point(x1, y1)
-        bottom_left_corner = Point(x1, y2)
-        top_right_corner = Point(x2, y1)
-        bottom_right_corner = Point(x2, y2)
-        if self.has_left_wall:
-            line = Line(top_left_corner, bottom_left_corner)
-            self._win.draw_line(line)
-        if self.has_top_wall:
-            line = Line(top_left_corner, top_right_corner)
-            self._win.draw_line(line)
-        if self.has_right_wall:
-            line = Line(top_right_corner, bottom_right_corner)
-            self._win.draw_line(line)
-        if self.has_bottom_wall:
-            line = Line(bottom_left_corner, bottom_right_corner)
-            self._win.draw_line(line)
-        
-    def draw_move(self, to_cell: 'Cell', undo=False):
-        """Draw a line between two cells."""
 
-        start = self.get_center_point
-        end = to_cell.get_center_point
 
-        fill_color = "red"
-        if undo:
-            fill_color = "gray"
+@dataclass
+class Point:
+    """Store public data members."""
 
-        line = Line(start, end)
-        self._win.draw_line(line, fill_color)
+    x: int = 0
+    y: int = 0
+
+
+class Line:
+    """Draw line."""
+
+    def __init__(self, start: Point, end: Point):
+        """Line constructor."""
+        self.start = start
+        self.end = end
+    
+    def draw(self, canvas: Canvas, fill_color: str = "black", fill_width: int = 2):
+        """Draw a line."""
+        canvas.create_line(
+            self.start.x, self.start.y,
+            self.end.x, self.end.y,
+            fill=fill_color,
+            width=fill_width
+        )
